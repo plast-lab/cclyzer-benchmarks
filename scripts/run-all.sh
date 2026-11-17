@@ -8,6 +8,7 @@
 #
 #   PARALLEL  concurrent runs   (default 4)
 #   PROGRAMS  extended regex over suite/program to restrict the set
+#   FORCE=1   rerun finished runs too
 
 set -uo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -22,7 +23,7 @@ for a in "${ANALYSES[@]}"; do
     for bc in $(ls -S -r bc/*/*.bc); do
         id=$(basename "$(dirname "$bc")")/$(basename "$bc" .bc)
         [[ $id =~ ${PROGRAMS:-.} ]] || continue
-        [ -f "results/$id/$a/metrics.json" ] && continue
+        [ "${FORCE:-0}" != 1 ] && [ -f "results/$id/$a/metrics.json" ] && continue
         printf '%s\t%s\n' "$bc" "$a"
     done
 done | xargs -P "$PARALLEL" -L 1 bash -c 'nice scripts/run.sh "$0" "$1"' \

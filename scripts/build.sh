@@ -77,4 +77,5 @@ for f in "$BENCH_COLLECT"/*.bc; do
 done
 [ $n -gt 0 ] || { echo "[$NAME] no bitcode matched KEEP='$KEEP'" >&2; exit 1; }
 printf '%s\t%s\t%s\t%s\n' "$NAME" "$VERSION" "$LLVM_VERSION" "$n" > "$OUT/BUILD-INFO.tsv"
+python3 "$ROOT/scripts/describe.py" "$OUT"/*.bc > "$WORK/describe.log"   # LOC, binary size
 echo "[$NAME] $n programs -> bc/$NAME/"
