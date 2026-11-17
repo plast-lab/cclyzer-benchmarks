@@ -51,18 +51,29 @@ flock -u 9
 
 rm -rf "$OUT"; mkdir -p "$OUT/results"
 timefile=$OUT/time.txt
-systemd-run --user --scope --quiet -p MemoryMax="$MEMMAX" -p MemorySwapMax=0 \
+# A memory-cap kill takes the whole scope down, /usr/bin/time included, so
+# the wall time is also measured here and the cause is read from the
+# scope's journal afterwards.
+unit=cclyzer-bench-$$-$RANDOM
+start=$(date +%s.%N)
+systemd-run --user --scope --quiet --unit="$unit" -p MemoryMax="$MEMMAX" -p MemorySwapMax=0 \
     /usr/bin/time -f '%e %M' -o "$timefile" \
     timeout "$TIMEOUT" "$BIN" -j "$THREADS" -F "$FACTS/" -D "$OUT/results/" \
     > "$OUT/analysis.log" 2>&1
 rc=$?
+elapsed=$(echo "$(date +%s.%N) - $start" | bc)
 
 if [ $rc = 0 ]; then status=ok
 elif [ $rc = 124 ]; then status=timeout
-elif [ $rc = 137 ] || grep -qiE 'killed|out of memory|bad_alloc' "$OUT/analysis.log"; then status=oom
+elif journalctl --user -u "$unit.scope" 2>/dev/null | grep -q 'killed by the OOM killer' \
+     || [ $rc = 137 ] || grep -qiE 'killed|out of memory|bad_alloc' "$OUT/analysis.log"; then status=oom
 else status=error
 fi
 read -r wall rss_kb < <(grep -E '^[0-9.]+ [0-9]+$' "$timefile" 2>/dev/null || echo "NA NA")
+if [ "$wall" = NA ]; then
+    wall=$(printf '%.2f' "$elapsed")             # killed: time until the kill
+    [ "$status" = oom ] && rss_kb=$(numfmt --from=iec "$MEMMAX" | awk '{print int($1/1024)}')
+fi
 
 python3 "$ROOT/scripts/metrics.py" --facts "$FACTS" --results "$OUT/results" \
     --program "$PROG" --suite "$SUITE" --analysis "$ANALYSIS" --status "$status" \
