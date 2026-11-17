@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# Drop-in CC/CXX for building benchmarks (installed as cc-wrap and c++-wrap).
+#
+# Every compile gets full LTO and debug info, so object files and static
+# libraries hold LLVM bitcode. Every real link goes through lld with
+# --save-temps, which writes the merged whole-program module before any LTO
+# optimisation (<output>.0.0.preopt.bc). That file is moved to
+# $BENCH_COLLECT, named after the output path relative to $BENCH_SRCROOT
+# ('/' replaced by '%'); the other temporaries are deleted.
+#
+# The project's own configure/make stay untouched and still produce working
+# executables, so configure checks that run test programs keep working.
+
+set -u
+: "${LLVM_VERSION:?LLVM_VERSION is not set}"
+
+case "$(basename "$0")" in
+    c++-wrap|c++|g++|clang++) compiler=clang++-$LLVM_VERSION ;;
+    *)        compiler=clang-$LLVM_VERSION ;;
+esac
+
+link=1
+out=a.out
+prev=
+for a in "$@"; do
+    case "$a" in
+        -c|-S|-E|-M|-MM|-r|-v|--version|-dumpversion|-dumpmachine|-print-*|-'###') link=0 ;;
+    esac
+    [ "$prev" = "-o" ] && out=$a
+    case "$a" in -o?*) out=${a#-o} ;; esac
+    prev=$a
+done
+
+# -Wno-unused-command-line-argument: compile-only calls see the linker flags too.
+flags=(-flto -g ${BENCH_OPT:--O0} -fuse-ld="lld-$LLVM_VERSION" -Wno-unused-command-line-argument -Wno-gcc-install-dir-libstdcxx)
+
+if [ $link = 0 ]; then
+    exec "$compiler" "$@" "${flags[@]}"
+fi
+
+"$compiler" "$@" "${flags[@]}" -Wl,--save-temps
+rc=$?
+
+temps=("$out".0.0.preopt.bc "$out".0.2.internalize.bc "$out".0.4.opt.bc
+       "$out".0.5.precodegen.bc "$out".lto.o "$out".resolution.txt)
+if [ $rc = 0 ] && [ -f "$out.0.0.preopt.bc" ] && [ -n "${BENCH_COLLECT:-}" ]; then
+    case "$(basename "$out")" in
+        conftest*|a.out) ;;  # configure probes
+        *)
+            abs=$(readlink -f "$out")
+            rel=${abs#"${BENCH_SRCROOT:-/}"/}
+            mkdir -p "$BENCH_COLLECT"
+            mv -f "$out.0.0.preopt.bc" "$BENCH_COLLECT/${rel//\//%}.bc"
+            ;;
+    esac
+fi
+rm -f -- "${temps[@]}"
+exit $rc
