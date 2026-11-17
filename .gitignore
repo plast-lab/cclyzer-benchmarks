@@ -3,3 +3,5 @@ work/
 results/
 bc/
 metrics.csv
+baseline-original/
+baseline-O0/

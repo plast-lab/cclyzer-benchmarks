@@ -8,6 +8,7 @@
 #
 #   PARALLEL  concurrent runs   (default 4)
 #   PROGRAMS  extended regex over suite/program to restrict the set
+#   EXCLUDE   extended regex over suite/program to leave out
 #   FORCE=1   rerun finished runs too
 
 set -uo pipefail
@@ -23,6 +24,7 @@ for a in "${ANALYSES[@]}"; do
     for bc in $(ls -S -r bc/*/*.bc); do
         id=$(basename "$(dirname "$bc")")/$(basename "$bc" .bc)
         [[ $id =~ ${PROGRAMS:-.} ]] || continue
+        [ -n "${EXCLUDE:-}" ] && [[ $id =~ $EXCLUDE ]] && continue
         [ "${FORCE:-0}" != 1 ] && [ -f "results/$id/$a/metrics.json" ] && continue
         printf '%s\t%s\n' "$bc" "$a"
     done
