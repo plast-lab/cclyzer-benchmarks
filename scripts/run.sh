@@ -29,18 +29,25 @@ BIN=$CCLYZER/build/logic/cclyzer-$ANALYSIS
 [ -x "$BIN" ] || { echo "no compiled analysis $BIN (run make in $CCLYZER)" >&2; exit 1; }
 
 mkdir -p "$BASE"
-# Facts, once per program (the .done marker guards against half-written facts)
-if [ ! -f "$FACTS/.done" ] || [ "$BC" -nt "$FACTS/.done" ]; then
+# One fact generation per program at a time, even with several analyses
+# of the same program running in parallel.
+exec 9> "$BASE/.facts.lock"
+flock 9
+# Facts, once per program and fact generator (the .done marker guards
+# against half-written facts; a rebuilt fact generator invalidates them)
+if [ ! -f "$FACTS/.done" ] || [ "$BC" -nt "$FACTS/.done" ] \
+   || [ "$CCLYZER/bin/fact-generator" -nt "$FACTS/.done" ]; then
     rm -rf "$FACTS"; mkdir -p "$FACTS"
     start=$(date +%s.%N)
     if "$CCLYZER/bin/fact-generator" -o "$FACTS/" "$BC" > "$BASE/factgen.log" 2>&1 \
-       && python3 "$CCLYZER/cti.py" "$FACTS/" >> "$BASE/factgen.log" 2>&1; then
+       && { [ ! -f "$CCLYZER/cti.py" ] || python3 "$CCLYZER/cti.py" "$FACTS/" >> "$BASE/factgen.log" 2>&1; }; then
         echo "$(echo "$(date +%s.%N) - $start" | bc)" > "$FACTS/.done"
     else
         echo "fact generation failed for $BC, see $BASE/factgen.log" >&2
         exit 1
     fi
 fi
+flock -u 9
 
 rm -rf "$OUT"; mkdir -p "$OUT/results"
 timefile=$OUT/time.txt
