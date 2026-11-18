@@ -54,10 +54,10 @@ make results              # every program x every analysis, resumable
 make metrics.csv          # one row per run
 ```
 
-Analyses: `context-insensitive`, `1-call-site-sensitive+heap`,
+Analyses: `context-insensitive`, `1-call-site-sensitive+heap`, `selective`,
 `2-call-site-sensitive+heap`, `2-call-site-sensitive+2-heap`.
 
-Each run is limited by `TIMEOUT` (default 2h) and `MEMMAX` (default 96G,
+Each run is limited by `TIMEOUT` (default 3h) and `MEMMAX` (default 128G,
 through a systemd scope), and recorded as `ok`, `timeout`, `oom` or `error`.
 `PARALLEL` runs go at once with `THREADS` threads each. Facts are generated
 once per program and shared by all analyses; result relations are deleted
@@ -80,13 +80,27 @@ projections, so the numbers are comparable across analyses.
 
 ## Programs
 
-| Suite | Version | Programs |
-|---|---|---|
-| coreutils | 9.5 | 107 |
-| postgresql | 16.4 | 32 (server and client tools) |
-| git | 2.47.0 | 5 |
-| redis | 7.2.6 | 3 |
-| bc, bzip2, lua | | 2 each |
-| bash, curl, grep, gzip, jq, make, nginx, sed, sqlite, tar, zstd | | 1 each |
+| Suite | Version | Programs | Source |
+|---|---|---|---|
+| coreutils | 9.5 | 107 | [coreutils-9.5.tar.xz](https://ftp.gnu.org/gnu/coreutils/coreutils-9.5.tar.xz) |
+| postgresql | 16.4 | 32 (server and client tools) | [postgresql-16.4.tar.bz2](https://ftp.postgresql.org/pub/source/v16.4/postgresql-16.4.tar.bz2) |
+| git | 2.47.0 | 5 | [git-2.47.0.tar.xz](https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.47.0.tar.xz) |
+| redis | 7.2.6 | 3 | [redis-7.2.6.tar.gz](https://download.redis.io/releases/redis-7.2.6.tar.gz) |
+| bc | 1.07.1 | 2 | [bc-1.07.1.tar.gz](https://ftp.gnu.org/gnu/bc/bc-1.07.1.tar.gz) |
+| bzip2 | 1.0.8 | 2 | [bzip2-1.0.8.tar.gz](https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz) |
+| lua | 5.4.7 | 2 | [lua-5.4.7.tar.gz](https://www.lua.org/ftp/lua-5.4.7.tar.gz) |
+| bash | 5.2.37 | 1 | [bash-5.2.37.tar.gz](https://ftp.gnu.org/gnu/bash/bash-5.2.37.tar.gz) |
+| curl | 8.10.1 | 1 | [curl-8.10.1.tar.xz](https://curl.se/download/curl-8.10.1.tar.xz) |
+| grep | 3.11 | 1 | [grep-3.11.tar.xz](https://ftp.gnu.org/gnu/grep/grep-3.11.tar.xz) |
+| gzip | 1.13 | 1 | [gzip-1.13.tar.xz](https://ftp.gnu.org/gnu/gzip/gzip-1.13.tar.xz) |
+| jq | 1.7.1 | 1 | [jq-1.7.1.tar.gz](https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz) |
+| make | 4.4.1 | 1 | [make-4.4.1.tar.gz](https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz) |
+| nginx | 1.26.2 | 1 | [nginx-1.26.2.tar.gz](https://nginx.org/download/nginx-1.26.2.tar.gz) |
+| sed | 4.9 | 1 | [sed-4.9.tar.xz](https://ftp.gnu.org/gnu/sed/sed-4.9.tar.xz) |
+| sqlite | 3.46.1 | 1 | [sqlite-autoconf-3460100.tar.gz](https://www.sqlite.org/2024/sqlite-autoconf-3460100.tar.gz) |
+| tar | 1.35 | 1 | [tar-1.35.tar.xz](https://ftp.gnu.org/gnu/tar/tar-1.35.tar.xz) |
+| zstd | 1.5.6 | 1 | [zstd-1.5.6.tar.gz](https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz) |
+
+Each source is checked against the sha256 in its recipe before building.
 
 164 programs in total.
