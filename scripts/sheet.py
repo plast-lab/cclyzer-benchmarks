@@ -19,6 +19,7 @@ ap.add_argument("-o", "--output", required=True)
 ap.add_argument("--results", default=os.path.join(ROOT, "results"))
 ap.add_argument("--before", default=os.path.join(ROOT, "baseline-O0"))
 ap.add_argument("--original", default=os.path.join(ROOT, "baseline-original"))
+ap.add_argument("--newer", help="ignore result metrics older than this file")
 ap.add_argument("--cclyzer", default=os.environ.get("CCLYZER", os.path.expanduser("~/dev/cclyzer-souffle")))
 args = ap.parse_args()
 
@@ -28,9 +29,11 @@ SHORT = {"context-insensitive": "CI", "1-call-site-sensitive+heap": "1cs+H",
          "2-call-site-sensitive+heap": "2cs+H", "2-call-site-sensitive+2-heap": "2cs+2H"}
 
 
-def load(d):
+def load(d, newer=None):
     out = {}
     for f in glob.glob(os.path.join(d, "*/*/*/metrics.json")):
+        if newer and os.path.getmtime(f) < os.path.getmtime(newer):
+            continue
         try:
             m = json.load(open(f))
         except (OSError, ValueError):
@@ -39,7 +42,7 @@ def load(d):
     return out
 
 
-new, before, orig = load(args.results), load(args.before), load(args.original)
+new, before, orig = load(args.results, args.newer), load(args.before), load(args.original)
 if not new:
     sys.exit(f"no metrics under {args.results}")
 key = lambda k: (k[0], k[1], ANALYSES.index(k[2]) if k[2] in ANALYSES else 9)
