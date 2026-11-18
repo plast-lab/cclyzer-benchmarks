@@ -57,7 +57,7 @@ make metrics.csv          # one row per run
 Analyses: `context-insensitive`, `1-call-site-sensitive+heap`, `selective`,
 `2-call-site-sensitive+heap`, `2-call-site-sensitive+2-heap`.
 
-Each run is limited by `TIMEOUT` (default 3h) and `MEMMAX` (default 128G,
+Each run is limited by `TIMEOUT` (default 2h with `make results`, 3h with `make run`) and `MEMMAX` (default 96G / 128G,
 through a systemd scope), and recorded as `ok`, `timeout`, `oom` or `error`.
 `PARALLEL` runs go at once with `THREADS` threads each. Facts are generated
 once per program and shared by all analyses; result relations are deleted

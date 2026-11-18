@@ -24,9 +24,9 @@ ap.add_argument("--cclyzer", default=os.environ.get("CCLYZER", os.path.expanduse
 args = ap.parse_args()
 
 ANALYSES = ["context-insensitive", "1-call-site-sensitive+heap",
-            "2-call-site-sensitive+heap", "2-call-site-sensitive+2-heap"]
+            "2-call-site-sensitive+heap", "2-call-site-sensitive+2-heap", "selective"]
 SHORT = {"context-insensitive": "CI", "1-call-site-sensitive+heap": "1cs+H",
-         "2-call-site-sensitive+heap": "2cs+H", "2-call-site-sensitive+2-heap": "2cs+2H"}
+         "2-call-site-sensitive+heap": "2cs+H", "2-call-site-sensitive+2-heap": "2cs+2H", "selective": "sel"}
 
 
 def load(d, newer=None):
